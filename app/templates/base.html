@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二手書交易平台</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f7fa; color: #333; }
+        header { background-color: #4a90e2; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        header a { color: white; text-decoration: none; font-size: 1.5rem; font-weight: bold; }
+        .search-bar { display: flex; align-items: center; }
+        .search-bar input[type="text"] { padding: 0.5rem; border: none; border-radius: 4px 0 0 4px; outline: none; width: 300px; }
+        .search-bar button { padding: 0.5rem 1rem; border: none; background-color: #f39c12; color: white; border-radius: 0 4px 4px 0; cursor: pointer; font-weight: bold; }
+        .search-bar button:hover { background-color: #e67e22; }
+        main { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .container { background-color: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/">二手書交易平台</a>
+        </div>
+        <form class="search-bar" action="/search" method="GET">
+            <input type="text" name="q" placeholder="搜尋書名或作者..." value="{{ query | default('') }}">
+            <button type="submit">搜尋</button>
+        </form>
+    </header>
+    <main>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>
