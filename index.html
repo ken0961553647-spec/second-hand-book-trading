@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>書香轉角 | 二手書交易平台 - 個人化願望清單與追蹤通知</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="書香轉角二手書交易平台，配備先進的圖書追蹤與願望清單系統。當您心儀的二手書上架時，系統立即發送即時通知提醒，省時又省心。">
+  <meta name="keywords" content="二手書, 二手書交易, 願望清單, 書籍追蹤, 自動通知, 買書, 賣書">
+  
+  <!-- Tailwind is avoided unless explicitly requested. Using Vanilla CSS for absolute control. -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header Navbar -->
+    <header>
+      <div class="logo-section">
+        <div class="logo-icon">B</div>
+        <div class="logo-text">書香轉角 <span style="font-size: 0.75rem; font-weight: 500; opacity: 0.7; letter-spacing: 1px;">二手交易</span></div>
+      </div>
+      
+      <div class="nav-actions">
+        <!-- Theme Toggle -->
+        <button id="theme-btn" class="theme-btn" title="切換深淺主題">
+          <i class="fa-regular fa-sun"></i>
+        </button>
+        
+        <!-- Notifications Bell -->
+        <div class="bell-container" id="bell-container">
+          <button class="bell-btn" title="通知中心">
+            <i class="fa-regular fa-bell"></i>
+          </button>
+          <div class="badge" id="notif-badge">0</div>
+          
+          <!-- Dropdown Notification Center -->
+          <div class="notif-dropdown" id="notif-dropdown">
+            <div class="notif-header">
+              <span class="notif-title">系統通知</span>
+              <button id="clear-notifications" class="clear-notif-btn">清除全部</button>
+            </div>
+            <div class="notif-list" id="notif-list">
+              <!-- Rendered Dynamically via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="main-content">
+      
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <!-- User Profile Card -->
+        <div class="profile-card">
+          <div class="profile-avatar">U</div>
+          <div>
+            <div class="profile-name">讀書人小明</div>
+            <div class="profile-role">二手買家 / 賣家</div>
+          </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <nav class="nav-menu">
+          <a href="#" class="nav-item active" data-section="market-dashboard">
+            <i class="fa-solid fa-store"></i>
+            <span>二手書市集</span>
+          </a>
+          <a href="#" class="nav-item" data-section="wishlist-dashboard">
+            <i class="fa-solid fa-heart"></i>
+            <span>我的願望清單</span>
+          </a>
+          <a href="#" class="nav-item" data-section="list-book">
+            <i class="fa-solid fa-plus-to-list"></i>
+            <span>模擬賣家上架</span>
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main Visual View Sections -->
+      <main>
+        
+        <!-- SECTION 1: Market Dashboard -->
+        <section id="market-dashboard" class="view-section active">
+          <div class="section-header">
+            <div class="section-title">
+              <h2>二手書市集</h2>
+              <p>瀏覽目前正在尋找新主人的二手好書</p>
+            </div>
+            <div>
+              <button class="btn btn-primary" onclick="document.getElementById('wishlist-modal').classList.add('show')">
+                <i class="fa-solid fa-heart"></i> 追蹤特定書籍
+              </button>
+            </div>
+          </div>
+
+          <!-- Search and Filter Panel -->
+          <div class="search-filter-bar">
+            <div class="search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="search-input" class="search-input" placeholder="搜尋書名、作者...">
+            </div>
+            <div>
+              <select id="category-filter" class="select-filter">
+                <option value="all">所有分類</option>
+                <option value="technology">科技資訊</option>
+                <option value="business">商業理財</option>
+                <option value="humanities">人文社科</option>
+                <option value="literature">文學小說</option>
+                <option value="language">語言學習</option>
+                <option value="other">其他書籍</option>
+              </select>
+            </div>
+            <div>
+              <select id="sort-filter" class="select-filter">
+                <option value="newest">最新上架</option>
+                <option value="price-asc">價格：由低到高</option>
+                <option value="price-desc">價格：由高到低</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Books Grid -->
+          <div class="books-grid" id="books-container">
+            <!-- Rendered Dynamically via JS -->
+          </div>
+        </section>
+
+        <!-- SECTION 2: Wishlist Dashboard -->
+        <section id="wishlist-dashboard" class="view-section">
+          <div class="section-header">
+            <div class="section-title">
+              <h2>個人化願望清單與圖書追蹤</h2>
+              <p>設定您想追蹤的書籍，當有賣家上架時，系統將自動比對並發送即時通知！</p>
+            </div>
+            <div>
+              <button class="btn btn-primary" onclick="document.getElementById('wishlist-modal').classList.add('show')">
+                <i class="fa-solid fa-plus"></i> 新增追蹤書籍
+              </button>
+            </div>
+          </div>
+
+          <!-- Statistics Cards -->
+          <div class="wishlist-summary-cards">
+            <div class="summary-card">
+              <div class="summary-icon blue">
+                <i class="fa-solid fa-radar"></i>
+              </div>
+              <div class="summary-info">
+                <h3 id="total-tracked-count">0</h3>
+                <p>持續追蹤中</p>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon green">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="summary-info">
+                <h3 id="total-matched-count">0</h3>
+                <p>比對成功次數</p>
+              </div>
+            </div>
+            <div class="summary-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(249,115,22,0.05));">
+              <div class="summary-icon orange">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div class="summary-info">
+                <h3>即時</h3>
+                <p>通知提醒服務</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Tracking Wishlist items list -->
+          <div class="wishlist-card-list" id="wishlist-container">
+            <!-- Rendered Dynamically via JS -->
+          </div>
+        </section>
+
+        <!-- SECTION 3: Seller Listing Simulator -->
+        <section id="list-book" class="view-section">
+          <div class="section-header">
+            <div class="section-title">
+              <h2>模擬賣家上架商品</h2>
+              <p>模擬其他賣家在平台上架二手書。測試追蹤通知系統的運作比對！</p>
+            </div>
+          </div>
+
+          <div class="seller-layout">
+            <!-- Seller Input Form -->
+            <div class="seller-form-wrapper">
+              <div id="seller-success-alert" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--secondary); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; color: var(--secondary);">
+                <i class="fa-solid fa-circle-check"></i> <strong>上架成功！</strong> 圖書已加入市集，系統已完成自動比對通知邏輯。
+              </div>
+              
+              <form id="seller-form">
+                <div class="form-group">
+                  <label for="book-title-input">二手書名稱 (必要)*</label>
+                  <input type="text" id="book-title-input" class="form-control" placeholder="請輸入完整或部分書籍名稱，如：演算法導論" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="book-author-input">作者 (必要)*</label>
+                  <input type="text" id="book-author-input" class="form-control" placeholder="請輸入作者名稱" required>
+                </div>
+                
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                  <div>
+                    <label for="book-price-input">二手欲售價格 ($)*</label>
+                    <input type="number" id="book-price-input" class="form-control" min="1" placeholder="例: 350" required>
+                  </div>
+                  <div>
+                    <label for="book-category-input">書籍類別</label>
+                    <select id="book-category-input" class="form-control">
+                      <option value="technology">科技資訊</option>
+                      <option value="business">商業理財</option>
+                      <option value="humanities">人文社科</option>
+                      <option value="literature">文學小說</option>
+                      <option value="language">語言學習</option>
+                      <option value="other">其他書籍</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>二手書況</label>
+                  <div class="condition-selectors">
+                    <div class="condition-option" data-value="new-like">幾近全新</div>
+                    <div class="condition-option active" data-value="good">良好</div>
+                    <div class="condition-option" data-value="fair">輕微翻閱</div>
+                    <div class="condition-option" data-value="poor">較多磨損</div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="book-description-input">備註說明 (書況描述)</label>
+                  <textarea id="book-description-input" class="form-control" rows="3" placeholder="例如：無劃記、有微黃、附贈原廠光碟..."></textarea>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                  <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                    <i class="fa-solid fa-paper-plane"></i> 確認模擬上架二手書
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Testing Instruction Guide Sidebar -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem;">
+              <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;"><i class="fa-solid fa-circle-question" style="color: var(--primary);"></i> 如何進行通知比對測試？</h3>
+              <ol style="padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.75rem;">
+                <li>切換到「<strong>我的願望清單</strong>」分頁，點擊右上角新增追蹤一本書，例如書名輸入「<strong>演算法導論</strong>」，預算上限設為「<strong>600</strong>」。</li>
+                <li>來到此「<strong>模擬賣家上架</strong>」分頁。</li>
+                <li>在欄位中上架一本書，書名填寫「<strong>演算法導論</strong>」(或包含該字眼之標題)，定價設定低於或等於預算（如 <strong>500</strong>），點擊上架。</li>
+                <li><strong>叮咚！</strong> 系統偵測到比對符合，右下角會立即彈出精美的<strong>即時 Toast 通知</strong>！</li>
+                <li>點擊右上角的鈴鐺可查看通知詳情，點擊通知可跳轉至該書所在的市集位置。</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <div>書香轉角 (BookCorner) &copy; 2026 - 二手書交易平台願望清單追蹤系統模組. Built for visual excellence.</div>
+    </footer>
+  </div>
+
+  <!-- MODAL: Add Wishlist Item (Book Tracking Settings) -->
+  <div class="modal-overlay" id="wishlist-modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 style="font-weight: 800; font-size: 1.1rem;"><i class="fa-solid fa-heart" style="color: var(--accent);"></i> 新增願望清單追蹤書籍</h3>
+        <button class="close-modal-btn" id="close-wishlist-modal">&times;</button>
+      </div>
+      <form id="wishlist-form">
+        <div class="modal-body">
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            請設定您要追蹤的書籍條件。當有賣家發布與關鍵字匹配的新上架書籍時，系統會自動在第一時間通知您。
+          </p>
+          
+          <div class="form-group">
+            <label for="wish-title">書籍名稱 / 關鍵字 (必要)*</label>
+            <input type="text" id="wish-title" class="form-control" placeholder="例如: 演算法導論、深入淺出設計模式" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="wish-author">指定作者 (選填)</label>
+            <input type="text" id="wish-author" class="form-control" placeholder="例: Cormen (符合即提醒)">
+          </div>
+          
+          <div class="form-group">
+            <label for="wish-max-price">預算上限 (選填，高於此價格則不通知)</label>
+            <input type="number" id="wish-max-price" class="form-control" min="1" placeholder="例: 500">
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('wishlist-modal').classList.remove('show')">取消</button>
+          <button type="submit" class="btn btn-primary">開始追蹤比對</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- App Main Logic script -->
+  <script src="app.js"></script>
+</body>
+</html>
