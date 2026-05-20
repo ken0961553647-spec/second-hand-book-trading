@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}上架新書 — BookSwap{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('books.index') }}">所有書籍</a></li>
+            <li class="breadcrumb-item active">上架新書</li>
+        </ol>
+    </nav>
+    <h1 class="page-title">
+        <i class="bi bi-plus-circle-fill"></i> 上架新書
+    </h1>
+    <p class="page-subtitle">填寫書籍資訊，讓好書找到下一位讀者</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card form-card">
+            <div class="card-body p-4">
+                <form action="{{ url_for('books.create') }}" method="POST" enctype="multipart/form-data" id="book-form">
+
+                    <!-- 書名 -->
+                    <div class="mb-4">
+                        <label for="title" class="form-label">
+                            <i class="bi bi-type-h1"></i> 書名 <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="title" name="title"
+                               value="{{ form_data.get('title', '') if form_data else '' }}"
+                               placeholder="例：Python 程式設計入門" required>
+                    </div>
+
+                    <!-- 作者 & ISBN -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="author" class="form-label">
+                                <i class="bi bi-person-fill"></i> 作者 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="author" name="author"
+                                   value="{{ form_data.get('author', '') if form_data else '' }}"
+                                   placeholder="例：林大為" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="isbn" class="form-label">
+                                <i class="bi bi-upc-scan"></i> ISBN
+                            </label>
+                            <input type="text" class="form-control" id="isbn" name="isbn"
+                                   value="{{ form_data.get('isbn', '') if form_data else '' }}"
+                                   placeholder="例：978-986-123-456-7">
+                        </div>
+                    </div>
+
+                    <!-- 原價 & 售價 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="original_price" class="form-label">
+                                <i class="bi bi-tag"></i> 原價 (NT$)
+                            </label>
+                            <input type="number" class="form-control" id="original_price" name="original_price"
+                                   value="{{ form_data.get('original_price', '') if form_data else '' }}"
+                                   placeholder="例：500" min="0" step="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="selling_price" class="form-label">
+                                <i class="bi bi-tag-fill"></i> 售價 (NT$) <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="selling_price" name="selling_price"
+                                   value="{{ form_data.get('selling_price', '') if form_data else '' }}"
+                                   placeholder="例：250" min="0" step="1" required>
+                        </div>
+                    </div>
+
+                    <!-- 書況 & 分類 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="condition" class="form-label">
+                                <i class="bi bi-star-fill"></i> 書況 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="condition" name="condition" required>
+                                {% set current_condition = form_data.get('condition', '良好') if form_data else '良好' %}
+                                <option value="全新" {{ 'selected' if current_condition == '全新' }}>全新</option>
+                                <option value="近全新" {{ 'selected' if current_condition == '近全新' }}>近全新</option>
+                                <option value="良好" {{ 'selected' if current_condition == '良好' }}>良好</option>
+                                <option value="普通" {{ 'selected' if current_condition == '普通' }}>普通</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">
+                                <i class="bi bi-bookmark-fill"></i> 分類 <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="category" name="category" required>
+                                {% set current_category = form_data.get('category', '其他') if form_data else '其他' %}
+                                <option value="教科書" {{ 'selected' if current_category == '教科書' }}>📘 教科書</option>
+                                <option value="小說" {{ 'selected' if current_category == '小說' }}>📖 小說</option>
+                                <option value="參考書" {{ 'selected' if current_category == '參考書' }}>📕 參考書</option>
+                                <option value="漫畫" {{ 'selected' if current_category == '漫畫' }}>📗 漫畫</option>
+                                <option value="其他" {{ 'selected' if current_category == '其他' }}>📓 其他</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 描述 -->
+                    <div class="mb-4">
+                        <label for="description" class="form-label">
+                            <i class="bi bi-chat-left-text-fill"></i> 描述
+                        </label>
+                        <textarea class="form-control" id="description" name="description" rows="4"
+                                  placeholder="描述書籍的狀態、使用痕跡、附贈品等...">{{ form_data.get('description', '') if form_data else '' }}</textarea>
+                    </div>
+
+                    <!-- 圖片上傳 -->
+                    <div class="mb-4">
+                        <label for="image" class="form-label">
+                            <i class="bi bi-image-fill"></i> 書籍封面照片
+                        </label>
+                        <div class="image-upload-area" id="image-upload-area">
+                            <input type="file" class="form-control" id="image" name="image"
+                                   accept="image/png,image/jpeg,image/gif,image/webp"
+                                   onchange="previewImage(this, 'image-preview')">
+                            <img id="image-preview" class="image-preview mt-3" style="display: none;" alt="預覽">
+                            <p class="text-muted small mt-2 mb-0">
+                                <i class="bi bi-info-circle"></i> 支援 PNG、JPG、GIF、WebP，最大 16MB
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 送出按鈕 -->
+                    <div class="d-flex gap-3 justify-content-end mt-4">
+                        <a href="{{ url_for('books.index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-x-lg"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-cloud-upload-fill"></i> 確認上架
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
