@@ -8,7 +8,8 @@ const DEFAULT_BOOKS = [
     condition: "new-like", // 幾近全新
     category: "technology",
     sellerName: "陳小明",
-    dateListed: new Date(Date.now() - 3600000 * 24).toISOString() // 1 day ago
+    dateListed: new Date(Date.now() - 3600000 * 24).toISOString(), // 1 day ago
+    isSold: false
   },
   {
     id: "book-2",
@@ -18,7 +19,8 @@ const DEFAULT_BOOKS = [
     condition: "good", // 良好
     category: "technology",
     sellerName: "林怡君",
-    dateListed: new Date(Date.now() - 3600000 * 12).toISOString() // 12 hours ago
+    dateListed: new Date(Date.now() - 3600000 * 12).toISOString(), // 12 hours ago
+    isSold: false
   },
   {
     id: "book-3",
@@ -28,7 +30,8 @@ const DEFAULT_BOOKS = [
     condition: "fair", // 輕微使用痕跡
     category: "humanities",
     sellerName: "王大同",
-    dateListed: new Date(Date.now() - 3600000 * 5).toISOString() // 5 hours ago
+    dateListed: new Date(Date.now() - 3600000 * 5).toISOString(), // 5 hours ago
+    isSold: false
   },
   {
     id: "book-4",
@@ -38,7 +41,8 @@ const DEFAULT_BOOKS = [
     condition: "new-like",
     category: "business",
     sellerName: "張雅婷",
-    dateListed: new Date(Date.now() - 3600000 * 48).toISOString() // 2 days ago
+    dateListed: new Date(Date.now() - 3600000 * 48).toISOString(), // 2 days ago
+    isSold: true // Coherent with mock order!
   },
   {
     id: "book-5",
@@ -48,7 +52,8 @@ const DEFAULT_BOOKS = [
     condition: "poor", // 較多使用痕跡
     category: "business",
     sellerName: "黃建國",
-    dateListed: new Date(Date.now() - 3600000 * 3).toISOString() // 3 hours ago
+    dateListed: new Date(Date.now() - 3600000 * 3).toISOString(), // 3 hours ago
+    isSold: false
   }
 ];
 
@@ -85,16 +90,45 @@ const DEFAULT_NOTIFICATIONS = [
   }
 ];
 
+const DEFAULT_ORDERS = [
+  {
+    id: "order-10827364",
+    bookId: "book-4",
+    bookTitle: "原子習慣：細微改變帶來巨大成就的實證法則",
+    bookAuthor: "James Clear",
+    bookPrice: 220,
+    shippingMethod: "store", // "store" (超商), "home" (宅配), "meet" (面交)
+    shippingFee: 60,
+    paymentMethod: "credit", // "credit" (信用卡), "atm" (轉帳), "cod" (貨到付款)
+    recipientName: "讀書人小明",
+    recipientPhone: "0912-345-678",
+    recipientAddress: "全家便利商店 台北市南港車站店 (門市代碼：12345)",
+    totalAmount: 280,
+    dateOrdered: new Date(Date.now() - 3600000 * 24 * 3).toISOString(), // 3 days ago
+    status: "delivered", // "processing", "shipped", "delivered", "completed"
+    trackingHistory: [
+      { status: "processing", title: "訂單已成立", time: new Date(Date.now() - 3600000 * 24 * 3).toISOString() },
+      { status: "shipped", title: "賣家已出貨", time: new Date(Date.now() - 3600000 * 24 * 2).toISOString() },
+      { status: "delivered", title: "商品已送達門市", time: new Date(Date.now() - 3600000 * 24 * 1).toISOString() }
+    ]
+  }
+];
+
 // Initialize Data State from LocalStorage or Defaults
 let books = JSON.parse(localStorage.getItem('books')) || DEFAULT_BOOKS;
+// Ensure books have 'isSold' property even if loaded from older localStorage
+books.forEach(b => { if (b.isSold === undefined) b.isSold = false; });
+
 let wishlist = JSON.parse(localStorage.getItem('wishlist')) || DEFAULT_WISHLIST;
 let notifications = JSON.parse(localStorage.getItem('notifications')) || DEFAULT_NOTIFICATIONS;
+let orders = JSON.parse(localStorage.getItem('orders')) || DEFAULT_ORDERS;
 
 // Utility functions to save state
 function saveState() {
   localStorage.setItem('books', JSON.stringify(books));
   localStorage.setItem('wishlist', JSON.stringify(wishlist));
   localStorage.setItem('notifications', JSON.stringify(notifications));
+  localStorage.setItem('orders', JSON.stringify(orders));
 }
 
 // Format condition string to human-readable
@@ -143,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderBooks(books);
   renderWishlist();
   renderNotifications();
+  renderOrders();
   
   // Navigation tabs switching
   const navItems = document.querySelectorAll('.nav-item');
@@ -166,9 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
       
-      // If switching to list-book section, clear any success alerts
+      // Section specific logic
       if (targetSection === 'list-book') {
         resetSellerForm();
+      } else if (targetSection === 'orders-dashboard') {
+        renderOrders();
       }
     });
   });
@@ -177,20 +214,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search-input');
   const categoryFilter = document.getElementById('category-filter');
   const sortFilter = document.getElementById('sort-filter');
+  const statusFilter = document.getElementById('status-filter');
   
   if (searchInput) searchInput.addEventListener('input', handleFilterChange);
   if (categoryFilter) categoryFilter.addEventListener('change', handleFilterChange);
   if (sortFilter) sortFilter.addEventListener('change', handleFilterChange);
+  if (statusFilter) statusFilter.addEventListener('change', handleFilterChange);
   
   function handleFilterChange() {
     const query = searchInput.value.toLowerCase().trim();
     const category = categoryFilter.value;
     const sortBy = sortFilter.value;
+    const showStatus = statusFilter ? statusFilter.value : 'available';
     
     let filtered = books.filter(book => {
       const matchQuery = book.title.toLowerCase().includes(query) || book.author.toLowerCase().includes(query);
       const matchCategory = category === 'all' || book.category === category;
-      return matchQuery && matchCategory;
+      const matchStatus = showStatus === 'all' || !book.isSold;
+      return matchQuery && matchCategory && matchStatus;
     });
     
     // Sort logic
@@ -266,9 +307,115 @@ document.addEventListener('DOMContentLoaded', () => {
   // Condition Selector Buttons
   const conditionOptions = document.querySelectorAll('.condition-option');
   conditionOptions.forEach(opt => {
+    // Avoid double-binding options that belong to shipping or payment pills
+    if (opt.closest('#shipping-pills') || opt.closest('#payment-pills')) return;
+    
     opt.addEventListener('click', () => {
-      conditionOptions.forEach(o => o.classList.remove('active'));
+      conditionOptions.forEach(o => {
+        if (!o.closest('#shipping-pills') && !o.closest('#payment-pills')) {
+          o.classList.remove('active');
+        }
+      });
       opt.classList.add('active');
+    });
+  });
+  
+  // Checkout Modal Events Setup
+  const closeCheckoutBtn = document.getElementById('close-checkout-modal');
+  const cancelCheckoutBtn = document.getElementById('cancel-checkout-btn');
+  const checkoutModal = document.getElementById('checkout-modal');
+  const checkoutForm = document.getElementById('checkout-form');
+  const closeReceiptBtn = document.getElementById('close-receipt-btn');
+  
+  if (closeCheckoutBtn && checkoutModal) {
+    closeCheckoutBtn.addEventListener('click', () => {
+      checkoutModal.classList.remove('show');
+    });
+  }
+  
+  if (cancelCheckoutBtn && checkoutModal) {
+    cancelCheckoutBtn.addEventListener('click', () => {
+      checkoutModal.classList.remove('show');
+    });
+  }
+  
+  if (checkoutForm) {
+    checkoutForm.addEventListener('submit', processPayment);
+  }
+  
+  if (closeReceiptBtn) {
+    closeReceiptBtn.addEventListener('click', () => {
+      if (checkoutModal) checkoutModal.classList.remove('show');
+      // Redirect to Orders dashboard
+      const ordersTab = document.querySelector('.nav-item[data-section="orders-dashboard"]');
+      if (ordersTab) ordersTab.click();
+    });
+  }
+  
+  // Checkout Shipping Pills Selection Toggles
+  const shippingPills = document.querySelectorAll('#shipping-pills .condition-option');
+  shippingPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      shippingPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      
+      const value = pill.getAttribute('data-value');
+      const addressLabel = document.getElementById('address-label');
+      const addressInput = document.getElementById('checkout-address');
+      
+      if (value === 'store') {
+        if (addressLabel) addressLabel.textContent = '超商取件門市名稱 (必要)*';
+        if (addressInput) addressInput.placeholder = '例如: 全家便利商店 台北市南港車站店 (門市代碼：12345)';
+      } else if (value === 'home') {
+        if (addressLabel) addressLabel.textContent = '收件宅配地址 (必要)*';
+        if (addressInput) addressInput.placeholder = '例如: 台北市南港區重陽路XXX號X樓';
+      } else if (value === 'meet') {
+        if (addressLabel) addressLabel.textContent = '面交約定地點與時間 (必要)*';
+        if (addressInput) addressInput.placeholder = '例如: 南港捷運站3號出口，平日晚上七點之後';
+      }
+      
+      updateCheckoutPrices();
+    });
+  });
+  
+  // Checkout Payment Pills Selection Toggles
+  const paymentPills = document.querySelectorAll('#payment-pills .condition-option');
+  paymentPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      paymentPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      
+      const value = pill.getAttribute('data-value');
+      const creditFields = document.getElementById('payment-credit-fields');
+      const atmFields = document.getElementById('payment-atm-fields');
+      const codFields = document.getElementById('payment-cod-fields');
+      
+      const cardNum = document.getElementById('checkout-card-num');
+      const cardExpiry = document.getElementById('checkout-card-expiry');
+      const cardCvc = document.getElementById('checkout-card-cvc');
+      
+      if (value === 'credit') {
+        creditFields.style.display = 'block';
+        atmFields.style.display = 'none';
+        codFields.style.display = 'none';
+        if (cardNum) cardNum.required = true;
+        if (cardExpiry) cardExpiry.required = true;
+        if (cardCvc) cardCvc.required = true;
+      } else if (value === 'atm') {
+        creditFields.style.display = 'none';
+        atmFields.style.display = 'block';
+        codFields.style.display = 'none';
+        if (cardNum) cardNum.required = false;
+        if (cardExpiry) cardExpiry.required = false;
+        if (cardCvc) cardCvc.required = false;
+      } else if (value === 'cod') {
+        creditFields.style.display = 'none';
+        atmFields.style.display = 'none';
+        codFields.style.display = 'block';
+        if (cardNum) cardNum.required = false;
+        if (cardExpiry) cardExpiry.required = false;
+        if (cardCvc) cardCvc.required = false;
+      }
     });
   });
   
@@ -369,7 +516,7 @@ function renderBooks(booksList) {
     const isTracked = wishlist.some(w => !w.isMatched && book.title.toLowerCase().includes(w.title.toLowerCase()));
     
     const card = document.createElement('div');
-    card.className = 'book-card';
+    card.className = `book-card ${book.isSold ? 'sold' : ''}`;
     card.innerHTML = `
       <div class="book-cover-wrapper">
         <span class="book-tag">${formatCategory(book.category)}</span>
@@ -377,6 +524,7 @@ function renderBooks(booksList) {
           <i class="fa-solid fa-book"></i>
           <div style="font-size: 0.75rem; margin-top: 5px; opacity: 0.6;">${book.sellerName} 上架</div>
         </div>
+        ${book.isSold ? '<div class="sold-overlay"><span class="sold-stamp">SOLD 已售出</span></div>' : ''}
       </div>
       <div class="book-info">
         <div>
@@ -388,11 +536,17 @@ function renderBooks(booksList) {
         </div>
         <div class="book-footer">
           <div class="book-price">$${book.price}</div>
-          <button class="track-quick-btn ${isTracked ? 'active' : ''}" 
-                  onclick="quickTrackBook(event, '${escapeHtml(book.title)}', '${escapeHtml(book.author)}', ${book.price})"
-                  title="${isTracked ? '已在您的追蹤清單中' : '快速追蹤此書'}">
-            <i class="fa-solid fa-heart"></i>
-          </button>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            ${book.isSold 
+              ? `<button class="buy-now-btn" disabled style="background: var(--text-muted); cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none;"><i class="fa-solid fa-ban"></i> 已售出</button>`
+              : `<button class="buy-now-btn" onclick="openCheckoutModal('${book.id}')"><i class="fa-solid fa-cart-shopping"></i> 立即購買</button>`
+            }
+            <button class="track-quick-btn ${isTracked ? 'active' : ''}" 
+                    onclick="quickTrackBook(event, '${escapeHtml(book.title)}', '${escapeHtml(book.author)}', ${book.price})"
+                    title="${isTracked ? '已在您的追蹤清單中' : '快速追蹤此書'}">
+              <i class="fa-solid fa-heart"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -843,7 +997,447 @@ function escapeHtml(str) {
             .replace(/'/g, "&#039;");
 }
 
-// Global quickTrack helper exposure
+// --- ONLINE TRANSACTION SYSTEM LOGIC ---
+let activeCheckoutBookId = null;
+
+function openCheckoutModal(bookId) {
+  activeCheckoutBookId = bookId;
+  const book = books.find(b => b.id === bookId);
+  if (!book) return;
+  
+  // Populate book card details in modal
+  const titleEl = document.getElementById('checkout-book-title');
+  const authorEl = document.getElementById('checkout-book-author');
+  const conditionEl = document.getElementById('checkout-book-condition');
+  const priceEl = document.getElementById('checkout-book-price');
+  
+  if (titleEl) titleEl.textContent = book.title;
+  if (authorEl) authorEl.textContent = book.author;
+  if (conditionEl) {
+    conditionEl.textContent = formatCondition(book.condition);
+    conditionEl.className = 'meta-pill';
+  }
+  if (priceEl) priceEl.textContent = `$${book.price}`;
+  
+  // Reset pills to default: store delivery, credit card payment
+  const defaultShipping = document.querySelector('#shipping-pills .condition-option[data-value="store"]');
+  if (defaultShipping) defaultShipping.click();
+  
+  const defaultPayment = document.querySelector('#payment-pills .condition-option[data-value="credit"]');
+  if (defaultPayment) defaultPayment.click();
+  
+  // Set default placeholder matching address
+  const addressInput = document.getElementById('checkout-address');
+  if (addressInput) addressInput.value = '全家便利商店 台北市南港車站店 (門市代碼：12345)';
+  
+  // Update calculations
+  updateCheckoutPrices();
+  
+  // Show form view & hide loading/success views
+  const formStep = document.getElementById('checkout-form-step');
+  const formFooter = document.getElementById('checkout-form-footer');
+  const processingStep = document.getElementById('checkout-processing-step');
+  const successStep = document.getElementById('checkout-success-step');
+  
+  if (formStep) formStep.style.display = 'block';
+  if (formFooter) formFooter.style.display = 'flex';
+  if (processingStep) processingStep.style.display = 'none';
+  if (successStep) successStep.style.display = 'none';
+  
+  // Open modal
+  const checkoutModal = document.getElementById('checkout-modal');
+  if (checkoutModal) checkoutModal.classList.add('show');
+}
+
+function updateCheckoutPrices() {
+  if (!activeCheckoutBookId) return;
+  const book = books.find(b => b.id === activeCheckoutBookId);
+  if (!book) return;
+  
+  const activeShipping = document.querySelector('#shipping-pills .condition-option.active');
+  const shippingFee = activeShipping ? parseInt(activeShipping.getAttribute('data-fee')) : 60;
+  
+  const subtotal = book.price;
+  const total = subtotal + shippingFee;
+  
+  const calcPrice = document.getElementById('checkout-calc-price');
+  const calcShipping = document.getElementById('checkout-calc-shipping');
+  const calcTotal = document.getElementById('checkout-calc-total');
+  
+  if (calcPrice) calcPrice.textContent = `$${subtotal}`;
+  if (calcShipping) calcShipping.textContent = `$${shippingFee}`;
+  if (calcTotal) calcTotal.textContent = `$${total}`;
+}
+
+function processPayment(e) {
+  if (e) e.preventDefault();
+  
+  if (!activeCheckoutBookId) return;
+  const book = books.find(b => b.id === activeCheckoutBookId);
+  if (!book) return;
+  
+  const name = document.getElementById('checkout-name').value.trim();
+  const phone = document.getElementById('checkout-phone').value.trim();
+  const address = document.getElementById('checkout-address').value.trim();
+  
+  if (!name || !phone || !address) {
+    showToast("輸入錯誤", "請完整填寫收件人姓名、電話及配送地址資訊！", "info");
+    return;
+  }
+  
+  // Transition to processing loading view
+  const formStep = document.getElementById('checkout-form-step');
+  const formFooter = document.getElementById('checkout-form-footer');
+  const processingStep = document.getElementById('checkout-processing-step');
+  
+  if (formStep) formStep.style.display = 'none';
+  if (formFooter) formFooter.style.display = 'none';
+  if (processingStep) processingStep.style.display = 'block';
+  
+  // Simulated 2-second SSL payment loading animation
+  const loadingText = document.getElementById('checkout-loading-text');
+  const progressBar = document.getElementById('checkout-progress-bar');
+  
+  let progress = 0;
+  if (progressBar) progressBar.style.width = '0%';
+  
+  const progressInterval = setInterval(() => {
+    progress += 12.5; // 8 steps to reach 100% over 2 seconds (250ms interval)
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    
+    if (loadingText) {
+      if (progress === 12.5) loadingText.textContent = "正在建立 256-bit SSL 安全連線加密...";
+      else if (progress === 37.5) loadingText.textContent = "驗證買家付款憑證與信用授權中...";
+      else if (progress === 62.5) loadingText.textContent = "通過 VISA/MasterCard 3D Secure 驗證...";
+      else if (progress === 87.5) loadingText.textContent = "向賣家資料庫傳送訂單建立請求與通知備份...";
+    }
+    
+    if (progress >= 100) {
+      clearInterval(progressInterval);
+      completeCheckoutTransaction(book, name, phone, address);
+    }
+  }, 250);
+}
+
+function completeCheckoutTransaction(book, recipientName, recipientPhone, recipientAddress) {
+  // Mark book as sold
+  book.isSold = true;
+  
+  // Get shipping details
+  const activeShipping = document.querySelector('#shipping-pills .condition-option.active');
+  const shippingMethod = activeShipping ? activeShipping.getAttribute('data-value') : 'store';
+  const shippingFee = activeShipping ? parseInt(activeShipping.getAttribute('data-fee')) : 60;
+  
+  // Get payment details
+  const activePayment = document.querySelector('#payment-pills .condition-option.active');
+  const paymentMethod = activePayment ? activePayment.getAttribute('data-value') : 'credit';
+  
+  let shippingName = '超商取貨';
+  if (shippingMethod === 'home') shippingName = '黑貓宅配';
+  if (shippingMethod === 'meet') shippingName = '面交自取';
+  
+  let paymentName = '信用卡線上刷卡';
+  if (paymentMethod === 'atm') paymentName = 'ATM 轉帳';
+  if (paymentMethod === 'cod') paymentName = '貨到付款';
+  
+  // Create order
+  const orderId = "order-" + Math.floor(10000000 + Math.random() * 90000000);
+  const totalAmount = book.price + shippingFee;
+  
+  const newOrder = {
+    id: orderId,
+    bookId: book.id,
+    bookTitle: book.title,
+    bookAuthor: book.author,
+    bookPrice: book.price,
+    shippingMethod,
+    shippingFee,
+    paymentMethod,
+    recipientName,
+    recipientPhone,
+    recipientAddress,
+    totalAmount,
+    dateOrdered: new Date().toISOString(),
+    status: "processing", // "processing", "shipped", "delivered", "completed"
+    trackingHistory: [
+      { status: "processing", title: "訂單已成立，安全第三方支付代收成功", time: new Date().toISOString() }
+    ]
+  };
+  
+  orders.unshift(newOrder);
+  
+  // Sync wishlist matches (if user bought a book that matches active wishes)
+  wishlist.forEach(w => {
+    if (!w.isMatched && book.title.toLowerCase().includes(w.title.toLowerCase())) {
+      w.isMatched = true;
+      w.matchedBookId = book.id;
+    }
+  });
+  
+  // Create system notification
+  const notifMsg = `交易成功！您已成功購買《${book.title}》，訂單編號為 ${orderId}。點擊此通知可前往訂單管理查看配送進度。`;
+  const newNotif = {
+    id: 'notif-' + Date.now(),
+    type: "match",
+    title: "訂單交易成立",
+    message: notifMsg,
+    dateCreated: new Date().toISOString(),
+    isRead: false,
+    linkBookId: book.id
+  };
+  notifications.unshift(newNotif);
+  
+  // Persist State
+  saveState();
+  
+  // Render Receipt fields
+  const receiptDate = document.getElementById('receipt-date');
+  const receiptId = document.getElementById('receipt-id');
+  const receiptBookTitle = document.getElementById('receipt-book-title');
+  const receiptBookPrice = document.getElementById('receipt-book-price');
+  const receiptShippingName = document.getElementById('receipt-shipping-name');
+  const receiptShippingFee = document.getElementById('receipt-shipping-fee');
+  const receiptTotal = document.getElementById('receipt-total');
+  const receiptRecipientName = document.getElementById('receipt-recipient-name');
+  const receiptRecipientPhone = document.getElementById('receipt-recipient-phone');
+  const receiptRecipientAddress = document.getElementById('receipt-recipient-address');
+  const receiptPaymentMethod = document.getElementById('receipt-payment-method');
+  
+  const pad = (n) => n < 10 ? '0' + n : n;
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  
+  if (receiptDate) receiptDate.textContent = `發票日期: ${dateStr}`;
+  if (receiptId) receiptId.textContent = `訂單編號: ${orderId}`;
+  if (receiptBookTitle) receiptBookTitle.textContent = book.title;
+  if (receiptBookPrice) receiptBookPrice.textContent = `$${book.price}`;
+  if (receiptShippingName) receiptShippingName.textContent = shippingMethod === 'store' ? '超商運費' : (shippingMethod === 'home' ? '宅配運費' : '面交運費');
+  if (receiptShippingFee) receiptShippingFee.textContent = `$${shippingFee}`;
+  if (receiptTotal) receiptTotal.textContent = `$${totalAmount}`;
+  if (receiptRecipientName) receiptRecipientName.textContent = recipientName;
+  if (receiptRecipientPhone) receiptRecipientPhone.textContent = recipientPhone;
+  if (receiptRecipientAddress) receiptRecipientAddress.textContent = recipientAddress;
+  if (receiptPaymentMethod) receiptPaymentMethod.textContent = paymentName;
+  
+  // Transition loading view to success receipt view
+  const processingStep = document.getElementById('checkout-processing-step');
+  const successStep = document.getElementById('checkout-success-step');
+  
+  if (processingStep) processingStep.style.display = 'none';
+  if (successStep) successStep.style.display = 'block';
+  
+  // Pop a success Toast
+  showToast("交易結帳成功", `訂單 ${orderId} 成立，請查收電子發票！`, "success");
+  
+  // Refresh page data renderings
+  renderBooks(books);
+  renderWishlist();
+  renderNotifications();
+  renderOrders();
+}
+
+function renderOrders() {
+  const container = document.getElementById('orders-container');
+  if (!container) return;
+  
+  // Update orders dashboard statistics
+  const totalOrdersEl = document.getElementById('total-orders-count');
+  const totalSpentEl = document.getElementById('total-spent-amount');
+  const activeDeliveryEl = document.getElementById('active-delivery-count');
+  
+  const totalOrders = orders.length;
+  const totalSpent = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const activeDeliveries = orders.filter(o => o.status === 'processing' || o.status === 'shipped' || o.status === 'delivered').length;
+  
+  if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
+  if (totalSpentEl) totalSpentEl.textContent = `$${totalSpent}`;
+  if (activeDeliveryEl) activeDeliveryEl.textContent = activeDeliveries;
+  
+  if (orders.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-receipt"></i>
+        <h3>您目前沒有任何交易訂單</h3>
+        <p>去二手書市集逛逛，尋找您喜愛的好書並體驗線上安全交易吧！</p>
+        <button class="btn btn-primary" onclick="document.querySelector('.nav-item[data-section=\\'market-dashboard\\']').click()">
+          <i class="fa-solid fa-store"></i> 瀏覽二手書市集
+        </button>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = '';
+  
+  orders.forEach(order => {
+    // Generate status badge HTML
+    let statusBadge = '';
+    if (order.status === 'processing') {
+      statusBadge = `<span class="wishlist-status status-tracking" style="background: rgba(99, 102, 241, 0.1); color: var(--primary); border-color: rgba(99, 102, 241, 0.2);"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 4px;"></i> 訂單處理中</span>`;
+    } else if (order.status === 'shipped') {
+      statusBadge = `<span class="wishlist-status status-tracking" style="background: rgba(249, 115, 22, 0.1); color: var(--accent); border-color: rgba(249, 115, 22, 0.2);"><i class="fa-solid fa-truck" style="margin-right: 4px;"></i> 賣家已出貨</span>`;
+    } else if (order.status === 'delivered') {
+      statusBadge = `<span class="wishlist-status status-tracking" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); animation: pulse 2s infinite;"><i class="fa-solid fa-box" style="margin-right: 4px;"></i> 商品已送達</span>`;
+    } else if (order.status === 'completed') {
+      statusBadge = `<span class="wishlist-status status-matched" style="animation: none;"><i class="fa-solid fa-circle-check" style="margin-right: 4px;"></i> 交易已完成</span>`;
+    }
+    
+    // Map payment method name
+    let paymentName = '信用卡線上刷卡';
+    if (order.paymentMethod === 'atm') paymentName = 'ATM 轉帳';
+    if (order.paymentMethod === 'cod') paymentName = '貨到付款';
+    
+    // Milestones tracking history HTML
+    const milestones = [
+      { status: 'processing', title: '訂單已成立，安全第三方支付代收成功' },
+      { status: 'shipped', title: '賣家已出貨，物流配送中' },
+      { status: 'delivered', title: '商品已送達，等待收件人領取' },
+      { status: 'completed', title: '交易完成，已撥付書款予賣家' }
+    ];
+    
+    const statusOrder = ['processing', 'shipped', 'delivered', 'completed'];
+    const currentIndex = statusOrder.indexOf(order.status);
+    
+    let timelineNodesHtml = '';
+    milestones.forEach((milestone, idx) => {
+      const historyEntry = order.trackingHistory.find(h => h.status === milestone.status);
+      const isCompleted = idx < currentIndex;
+      const isActive = idx === currentIndex;
+      
+      let nodeClass = 'timeline-node';
+      if (isActive) nodeClass = 'timeline-node active';
+      else if (isCompleted || historyEntry) nodeClass = 'timeline-node completed';
+      
+      let displayTitle = milestone.title;
+      let displayTime = '';
+      
+      if (historyEntry) {
+        displayTitle = historyEntry.title;
+        displayTime = `<div class="timeline-time">${new Date(historyEntry.time).toLocaleString()}</div>`;
+      } else {
+        if (milestone.status === 'shipped') displayTitle = '等待賣家出貨';
+        if (milestone.status === 'delivered') displayTitle = '等待物流送達';
+        if (milestone.status === 'completed') displayTitle = '買家確認收貨後，訂單即完成';
+      }
+      
+      timelineNodesHtml += `
+        <div class="${nodeClass}">
+          <div class="timeline-title" style="font-size: 0.75rem;">${displayTitle}</div>
+          ${displayTime}
+        </div>
+      `;
+    });
+    
+    const card = document.createElement('div');
+    card.className = 'order-item-card';
+    card.innerHTML = `
+      <div class="order-header-row">
+        <div>
+          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem; margin-right: 0.75rem;">
+            訂單編號: <span style="font-family: monospace;">${order.id}</span>
+          </span>
+          <span class="meta-pill"><i class="fa-solid fa-clock"></i> ${new Date(order.dateOrdered).toLocaleDateString()}</span>
+        </div>
+        <div>
+          ${statusBadge}
+        </div>
+      </div>
+      
+      <div class="order-details-body">
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="width: 44px; height: 60px; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary)); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); flex-shrink: 0;">
+              <i class="fa-solid fa-book" style="font-size: 1.1rem; opacity: 0.5;"></i>
+            </div>
+            <div>
+              <h4 style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.15rem;">${order.bookTitle}</h4>
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">${order.bookAuthor}</p>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem; margin-top: 0.25rem;">
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 0.15rem;">收件人姓名</span>
+              <span style="font-weight: 600; color: var(--text-primary);">${order.recipientName}</span>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 0.15rem;">聯絡電話</span>
+              <span style="font-weight: 600; color: var(--text-primary);">${order.recipientPhone}</span>
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <span style="color: var(--text-muted); display: block; margin-bottom: 0.15rem;">收件地址 / 配送資訊</span>
+              <span style="font-weight: 600; color: var(--text-primary); word-break: break-all;">${order.recipientAddress}</span>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-glass); border: 1px solid var(--border-color); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-top: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">
+              <span>書籍 $${order.bookPrice} + 運費 $${order.shippingFee} (${paymentName})</span>
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 800; color: var(--secondary);">
+              交易總計: <span style="font-size: 1.1rem;">$${order.totalAmount}</span>
+            </div>
+          </div>
+          
+          ${order.status === 'delivered' 
+            ? `<div style="margin-top: 0.5rem;">
+                 <button class="btn btn-primary" style="width: 100%; justify-content: center; background: var(--secondary); box-shadow: none; padding: 0.5rem;" onclick="confirmOrderReceived('${order.id}')">
+                   <i class="fa-solid fa-circle-check"></i> 確認收到商品 (完成交易)
+                 </button>
+               </div>` 
+            : ''
+          }
+        </div>
+        
+        <div>
+          <h5 style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem;">物流狀態時間軸</h5>
+          <div class="order-timeline">
+            ${timelineNodesHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function confirmOrderReceived(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  
+  order.status = 'completed';
+  order.trackingHistory.push({
+    status: 'completed',
+    title: '買家已確認收貨，本筆二手書交易安全完成，款項已匯予賣家',
+    time: new Date().toISOString()
+  });
+  
+  // Create system notification
+  const notifMsg = `交易順利完成！您購買的書籍《${order.bookTitle}》(訂單編號: ${order.id}) 款項已撥付給賣家，感謝您的信任！`;
+  const newNotif = {
+    id: 'notif-' + Date.now(),
+    type: "match",
+    title: "二手交易安全完成",
+    message: notifMsg,
+    dateCreated: new Date().toISOString(),
+    isRead: false,
+    linkBookId: order.bookId
+  };
+  notifications.unshift(newNotif);
+  
+  saveState();
+  
+  showToast("交易順利完成", "款項已安全轉交給賣家，感謝您的訂購！", "success");
+  
+  renderOrders();
+  renderNotifications();
+}
+
+// Global helper exposures
 window.quickTrackBook = quickTrackBook;
 window.removeWishlistItem = removeWishlistItem;
 window.viewMatchedBook = viewMatchedBook;
+window.openCheckoutModal = openCheckoutModal;
+window.confirmOrderReceived = confirmOrderReceived;
+window.updateCheckoutPrices = updateCheckoutPrices;
+

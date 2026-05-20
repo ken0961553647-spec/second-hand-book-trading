@@ -75,6 +75,10 @@
             <i class="fa-solid fa-heart"></i>
             <span>我的願望清單</span>
           </a>
+          <a href="#" class="nav-item" data-section="orders-dashboard">
+            <i class="fa-solid fa-receipt"></i>
+            <span>我的交易訂單</span>
+          </a>
           <a href="#" class="nav-item" data-section="list-book">
             <i class="fa-solid fa-plus-to-list"></i>
             <span>模擬賣家上架</span>
@@ -121,6 +125,12 @@
                 <option value="newest">最新上架</option>
                 <option value="price-asc">價格：由低到高</option>
                 <option value="price-desc">價格：由高到低</option>
+              </select>
+            </div>
+            <div>
+              <select id="status-filter" class="select-filter">
+                <option value="available">僅顯示未售出</option>
+                <option value="all">顯示全部（含已售出）</option>
               </select>
             </div>
           </div>
@@ -178,6 +188,52 @@
 
           <!-- Active Tracking Wishlist items list -->
           <div class="wishlist-card-list" id="wishlist-container">
+            <!-- Rendered Dynamically via JS -->
+          </div>
+        </section>
+
+        <!-- SECTION 4: Orders Dashboard -->
+        <section id="orders-dashboard" class="view-section">
+          <div class="section-header">
+            <div class="section-title">
+              <h2>我的交易訂單</h2>
+              <p>管理並追蹤您的二手書線上交易紀錄與即時物流狀態</p>
+            </div>
+          </div>
+
+          <!-- Orders Stats -->
+          <div class="wishlist-summary-cards" style="margin-bottom: 2rem;">
+            <div class="summary-card">
+              <div class="summary-icon blue" style="background: rgba(99,102,241,0.1); color: var(--primary);">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <div class="summary-info">
+                <h3 id="total-orders-count">0</h3>
+                <p>累計購買訂單</p>
+              </div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-icon green">
+                <i class="fa-solid fa-circle-dollar-to-slot"></i>
+              </div>
+              <div class="summary-info">
+                <h3 id="total-spent-amount">$0</h3>
+                <p>已消費總金額</p>
+              </div>
+            </div>
+            <div class="summary-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(16,185,129,0.05));">
+              <div class="summary-icon orange" style="background: rgba(249,115,22,0.1); color: var(--accent);">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+              </div>
+              <div class="summary-info">
+                <h3 id="active-delivery-count">0</h3>
+                <p>進行中配送訂單</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Orders List -->
+          <div class="wishlist-card-list" id="orders-container">
             <!-- Rendered Dynamically via JS -->
           </div>
         </section>
@@ -306,6 +362,228 @@
           <button type="submit" class="btn btn-primary">開始追蹤比對</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Checkout & Purchase -->
+  <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-container" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 style="font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-cart-shopping" style="color: var(--primary);"></i> 線上安全交易結帳
+        </h3>
+        <button class="close-modal-btn" id="close-checkout-modal">&times;</button>
+      </div>
+      
+      <!-- Checkout Form Step -->
+      <form id="checkout-form">
+        <div class="modal-body" id="checkout-form-step">
+          <!-- Book Brief Info -->
+          <div class="checkout-book-summary" style="display: flex; gap: 1.25rem; background: var(--bg-glass); border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; align-items: center;">
+            <div class="checkout-book-cover" style="width: 50px; height: 68px; background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary)); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); flex-shrink: 0;">
+              <i class="fa-solid fa-book" style="font-size: 1.25rem; opacity: 0.6; color: var(--text-secondary);"></i>
+            </div>
+            <div style="flex-grow: 1; min-width: 0;">
+              <h4 id="checkout-book-title" style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">書名</h4>
+              <p id="checkout-book-author" style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.25rem;">作者</p>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="checkout-book-condition" class="meta-pill" style="font-size: 0.7rem; padding: 0.05rem 0.35rem;">書況</span>
+                <span id="checkout-book-price" style="color: var(--secondary); font-weight: 800; font-size: 1.05rem;">$0</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Shipping Options -->
+          <div class="form-group">
+            <label>選擇物流物流方式 (必要)*</label>
+            <div class="condition-selectors" id="shipping-pills" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+              <div class="condition-option active" data-value="store" data-fee="60">
+                <i class="fa-solid fa-store" style="margin-bottom: 0.25rem; font-size: 1rem; display: block;"></i>
+                超商取貨 <span>$60</span>
+              </div>
+              <div class="condition-option" data-value="home" data-fee="100">
+                <i class="fa-solid fa-truck" style="margin-bottom: 0.25rem; font-size: 1rem; display: block;"></i>
+                黑貓宅配 <span>$100</span>
+              </div>
+              <div class="condition-option" data-value="meet" data-fee="0">
+                <i class="fa-solid fa-handshake" style="margin-bottom: 0.25rem; font-size: 1rem; display: block;"></i>
+                面交自取 <span>$0</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Payment Options -->
+          <div class="form-group">
+            <label>選擇付款方式 (必要)*</label>
+            <div class="condition-selectors" id="payment-pills" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+              <div class="condition-option active" data-value="credit">
+                <i class="fa-regular fa-credit-card" style="margin-bottom: 0.25rem; font-size: 1rem; display: block;"></i>
+                線上刷卡
+              </div>
+              <div class="condition-option" data-value="atm">
+                <i class="fa-solid fa-building-columns" style="margin-bottom: 0.25rem; font-size: 1rem; display: block;"></i>
+                ATM 轉帳
+              </div>
+              <div class="condition-option" data-value="cod">
+                <i class="fa-solid fa-wallet" style="margin-bottom: 0.25rem; font-size: 1rem; display: block;"></i>
+                貨到付款
+              </div>
+            </div>
+          </div>
+          
+          <!-- Dynamic Payment Details -->
+          <div id="payment-details-panel" style="margin-bottom: 1.25rem;">
+            <!-- Credit Card (Default) -->
+            <div id="payment-credit-fields">
+              <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
+                <div>
+                  <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">信用卡卡號</label>
+                  <input type="text" id="checkout-card-num" class="form-control" placeholder="4563 •••• •••• 1234" maxlength="19" value="4563 1284 9283 5522" required>
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">有效期限</label>
+                  <input type="text" id="checkout-card-expiry" class="form-control" placeholder="MM/YY" maxlength="5" value="12/28" required>
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">安全碼</label>
+                  <input type="password" id="checkout-card-cvc" class="form-control" placeholder="CVC" maxlength="3" value="382" required>
+                </div>
+              </div>
+            </div>
+            
+            <!-- ATM -->
+            <div id="payment-atm-fields" style="display: none; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+              <p><i class="fa-solid fa-circle-info" style="color: #3b82f6; margin-right: 4px;"></i> 下單後系統會自動為您產生一組<strong>專屬虛擬帳戶</strong>。請於 <strong>24小時內</strong> 透過實體 ATM 或行動銀行完成轉帳，逾期系統將會自動取消該筆交易訂單。</p>
+            </div>
+            
+            <!-- COD -->
+            <div id="payment-cod-fields" style="display: none; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+              <p><i class="fa-solid fa-circle-info" style="color: var(--secondary;); margin-right: 4px;"></i> <strong>貨到付款服務</strong>：商品送達您所選的超商門市或宅配住址時，請再以現金交付給店員或宅配物流司機即可。此交易安全由第三方代收機構提供擔保。</p>
+            </div>
+          </div>
+          
+          <!-- Recipient Form -->
+          <div class="recipient-panel" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1.25rem;">
+            <h4 style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; color: var(--text-primary);">
+              <i class="fa-solid fa-truck-ramp-box" style="color: var(--primary);"></i> 收件人與配送資訊
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+              <div>
+                <label for="checkout-name" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">收件姓名 (必要)*</label>
+                <input type="text" id="checkout-name" class="form-control" placeholder="請輸入收件人姓名" value="讀書人小明" required>
+              </div>
+              <div>
+                <label for="checkout-phone" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">收件電話 (必要)*</label>
+                <input type="text" id="checkout-phone" class="form-control" placeholder="例如: 0912-345-678" value="0912-345-678" required>
+              </div>
+            </div>
+            <div>
+              <label for="checkout-address" id="address-label" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">超商取件門市名稱 (必要)*</label>
+              <input type="text" id="checkout-address" class="form-control" placeholder="例如: 全家便利商店 台北市南港車站店 (門市代碼：12345)" required>
+            </div>
+          </div>
+          
+          <!-- Bill Summary Details -->
+          <div style="background: var(--bg-glass); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-top: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+              <span>圖書售價</span>
+              <span id="checkout-calc-price">$0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.5rem;">
+              <span>物流運費</span>
+              <span id="checkout-calc-shipping">$60</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: 800;">
+              <span>結帳應付總金額</span>
+              <span id="checkout-calc-total" style="color: var(--secondary); font-size: 1.15rem;">$0</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer" id="checkout-form-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" id="cancel-checkout-btn">取消</button>
+          <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-shield-halved"></i> 安全確認下單付款
+          </button>
+        </div>
+      </form>
+      
+      <!-- Checkout Loading Step -->
+      <div class="modal-body" id="checkout-processing-step" style="display: none; padding: 4rem 2rem; text-align: center;">
+        <div class="checkout-spinner-wrapper" style="position: relative; width: 70px; height: 70px; margin: 0 auto 1.5rem auto;">
+          <div class="checkout-spinner"></div>
+          <div style="position: absolute; top: 8px; left: 8px; width: 54px; height: 54px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-lock" style="font-size: 1.25rem; color: var(--primary);"></i>
+          </div>
+        </div>
+        <h3 style="font-weight: 800; font-size: 1.2rem; margin-bottom: 0.5rem;">安全付款處裡中</h3>
+        <p id="checkout-loading-text" style="color: var(--text-secondary); font-size: 0.85rem; min-height: 1.5rem;">正在建立 256-bit SSL 安全連線...</p>
+        <div style="width: 200px; height: 6px; background: var(--border-color); border-radius: 3px; margin: 1.5rem auto 0 auto; overflow: hidden;">
+          <div id="checkout-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(to right, var(--primary), var(--secondary)); border-radius: 3px; transition: width 0.2s;"></div>
+        </div>
+      </div>
+      
+      <!-- Checkout Success Receipt Step -->
+      <div class="modal-body" id="checkout-success-step" style="display: none; padding: 1.5rem;">
+        <div style="text-align: center; margin-bottom: 1.25rem;">
+          <div class="success-seal-icon" style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1); color: var(--secondary); border: 2px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem auto; font-size: 1.3rem;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h3 style="font-weight: 800; font-size: 1.25rem; color: var(--secondary);">交易成功！訂單已成立</h3>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.15rem;">感謝您的訂購，賣家會盡快為您安排配送！</p>
+        </div>
+        
+        <!-- Printable Paper Receipt View -->
+        <div class="receipt-card-wrapper">
+          <div class="receipt-card-header">
+            <h4>書香轉角 (BookCorner) 交易明細收據</h4>
+            <div style="font-family: monospace; letter-spacing: 4px; font-size: 0.7rem; opacity: 0.5; margin: 0.35rem 0;">|||| | ||||| | ||| || ||| |</div>
+            <p id="receipt-date" style="font-size: 0.7rem; color: var(--text-muted);">發票日期: 2026-05-20 17:35</p>
+            <p id="receipt-id" style="font-size: 0.7rem; color: var(--text-muted);">訂單編號: order-10928374</p>
+          </div>
+          
+          <div class="receipt-card-body">
+            <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.85rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.4rem;">
+              <span>項目明細</span>
+              <span>小計金額</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
+              <span id="receipt-book-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">書籍名稱</span>
+              <span id="receipt-book-price">$0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px dashed var(--border-color); padding-bottom: 0.4rem; margin-bottom: 0.4rem;">
+              <span id="receipt-shipping-name">超商運費</span>
+              <span id="receipt-shipping-fee">$0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 800; margin-bottom: 0.75rem;">
+              <span>應付總金額</span>
+              <span id="receipt-total" style="color: var(--secondary); font-size: 1rem;">$0</span>
+            </div>
+            
+            <!-- Recipient Detail lists -->
+            <div style="font-size: 0.75rem; color: var(--text-secondary); border-top: 1px dashed var(--border-color); padding-top: 0.6rem; display: flex; flex-direction: column; gap: 0.25rem;">
+              <div><strong>收件人:</strong> <span id="receipt-recipient-name">讀書人小明</span></div>
+              <div><strong>收件電話:</strong> <span id="receipt-recipient-phone">0912-345-678</span></div>
+              <div style="word-break: break-all;"><strong>配送資訊:</strong> <span id="receipt-recipient-address">超商門市</span></div>
+              <div><strong>付款方式:</strong> <span id="receipt-payment-method">信用卡線上付款</span></div>
+            </div>
+          </div>
+          
+          <div class="receipt-card-seal">
+            PAID 已付款
+          </div>
+          
+          <div class="receipt-card-footer">
+            <p>※ 本收據是由書香轉角二手交易系統自動開立之電子憑證，若您有任何款項與配送問題，請向客服部門出示此單據進行處理。</p>
+          </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+          <button type="button" class="btn btn-primary" id="close-receipt-btn" style="width: 100%; justify-content: center; padding: 0.75rem;">
+            <i class="fa-solid fa-file-invoice"></i> 前往「我的交易訂單」查看
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
