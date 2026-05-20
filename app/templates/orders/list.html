@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h2 class="fw-bold">我的訂單</h2>
+        <p class="text-muted mb-0">管理您的購買與售出紀錄</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4 py-3">書名</th>
+                                <th>我的角色</th>
+                                <th>交易對象</th>
+                                <th>狀態</th>
+                                <th>最後更新</th>
+                                <th class="text-end pe-4">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">{{ order.book_title }}</td>
+                                <td>
+                                    {% if order.role == '買家' %}
+                                        <span class="badge bg-info text-dark px-2 py-1">我是買家</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark px-2 py-1">我是賣家</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ order.other_party }}</td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <span class="badge bg-secondary">待確認</span>
+                                    {% elif order.status == 'accepted' %}
+                                        <span class="badge bg-primary">進行中</span>
+                                    {% elif order.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% elif order.status == 'cancelled' %}
+                                        <span class="badge bg-danger">已取消</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">{{ order.updated_at }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('order.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">查看詳情</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <h4>📭</h4>
+                                    目前沒有任何訂單紀錄
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

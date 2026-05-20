@@ -1,0 +1,38 @@
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    owner_id INTEGER NOT NULL,
+    FOREIGN KEY(owner_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    book_id INTEGER NOT NULL,
+    buyer_id INTEGER NOT NULL,
+    seller_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    meet_location TEXT,
+    meet_time DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(book_id) REFERENCES books(id),
+    FOREIGN KEY(buyer_id) REFERENCES users(id),
+    FOREIGN KEY(seller_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS order_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    sender_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(order_id) REFERENCES orders(id),
+    FOREIGN KEY(sender_id) REFERENCES users(id)
+);
