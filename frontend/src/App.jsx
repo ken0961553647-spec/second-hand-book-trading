@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import SearchPage from './components/SearchPage';
-import ChatWindow from './components/ChatWindow';
+import D1445595 from './components/D1445595';
 
 export default function App() {
   const [view, setView] = useState('search'); // 'search' 或 'chat'
@@ -43,7 +43,7 @@ export default function App() {
         {view === 'search' ? (
           <SearchPage onContactSeller={handleContactSeller} />
         ) : (
-          <ChatWindow 
+          <D1445595 
             activeBookToChat={selectedBook} 
             currentUser={currentUser}
             onBackToSearch={handleBackToSearch} 
