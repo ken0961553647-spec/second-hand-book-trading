@@ -83,6 +83,10 @@
             <i class="fa-solid fa-plus-to-list"></i>
             <span>模擬賣家上架</span>
           </a>
+          <a href="#" class="nav-item" data-section="messages-dashboard">
+            <i class="fa-solid fa-comments"></i>
+            <span>通訊匣</span>
+          </a>
         </nav>
       </aside>
 
@@ -316,6 +320,47 @@
                 <li><strong>叮咚！</strong> 系統偵測到比對符合，右下角會立即彈出精美的<strong>即時 Toast 通知</strong>！</li>
                 <li>點擊右上角的鈴鐺可查看通知詳情，點擊通知可跳轉至該書所在的市集位置。</li>
               </ol>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 5: Messages Dashboard -->
+        <section id="messages-dashboard" class="view-section">
+          <div class="chat-layout">
+            <!-- Sidebar for chat list -->
+            <div class="chat-sidebar">
+              <div class="chat-sidebar-header">
+                <h3>即時通訊匣</h3>
+              </div>
+              <div class="chat-list" id="chat-list-container">
+                <!-- Chat items rendered here -->
+              </div>
+            </div>
+            <!-- Main Chat Window -->
+            <div class="chat-window" id="chat-window-container">
+              <div class="chat-empty-state" id="chat-empty-state">
+                <i class="fa-regular fa-comments" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>選擇左側對話或從市集點擊「聯絡賣家」開始聊天</p>
+              </div>
+              
+              <div class="chat-active-view" id="chat-active-view" style="display: none;">
+                <div class="chat-header">
+                  <div>
+                    <h4 id="chat-active-name" style="margin-bottom: 0.2rem;">賣家名稱</h4>
+                    <span id="chat-active-book" class="meta-pill" style="font-size: 0.75rem;">關於：書籍名稱</span>
+                  </div>
+                  <span id="chat-typing-indicator" style="font-size: 0.75rem; color: var(--text-muted); display: none;">對方正在輸入中...</span>
+                </div>
+                <div class="chat-messages" id="chat-messages-container">
+                  <!-- Messages rendered here -->
+                </div>
+                <div class="chat-input-area">
+                  <form id="chat-form" style="display: flex; gap: 0.5rem; width: 100%;">
+                    <input type="text" id="chat-input" class="form-control" placeholder="輸入訊息..." autocomplete="off" required>
+                    <button type="submit" class="btn btn-primary" style="padding: 0 1.25rem;"><i class="fa-solid fa-paper-plane"></i></button>
+                  </form>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -591,6 +636,7 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- App Main Logic script -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
