@@ -206,6 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
         resetSellerForm();
       } else if (targetSection === 'orders-dashboard') {
         renderOrders();
+      } else if (targetSection === 'messages-dashboard') {
+        renderChatList();
       }
     });
   });
@@ -539,7 +541,8 @@ function renderBooks(booksList) {
           <div style="display: flex; gap: 0.5rem; align-items: center;">
             ${book.isSold 
               ? `<button class="buy-now-btn" disabled style="background: var(--text-muted); cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none;"><i class="fa-solid fa-ban"></i> 已售出</button>`
-              : `<button class="buy-now-btn" onclick="openCheckoutModal('${book.id}')"><i class="fa-solid fa-cart-shopping"></i> 立即購買</button>`
+              : `<button class="buy-now-btn" onclick="openCheckoutModal('${book.id}')"><i class="fa-solid fa-cart-shopping"></i> 立即購買</button>
+                 <button class="btn btn-secondary" onclick="startChat('${book.id}', '${escapeHtml(book.sellerName)}', '${escapeHtml(book.title)}')" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;"><i class="fa-regular fa-comments"></i> 聯絡賣家</button>`
             }
             <button class="track-quick-btn ${isTracked ? 'active' : ''}" 
                     onclick="quickTrackBook(event, '${escapeHtml(book.title)}', '${escapeHtml(book.author)}', ${book.price})"
@@ -1440,4 +1443,254 @@ window.viewMatchedBook = viewMatchedBook;
 window.openCheckoutModal = openCheckoutModal;
 window.confirmOrderReceived = confirmOrderReceived;
 window.updateCheckoutPrices = updateCheckoutPrices;
+
+/* =========================================
+   Chat & Real-time Messaging System (Socket.io)
+   ========================================= */
+
+// Define current mock user ID since we don't have a real login system yet
+const CURRENT_USER_ID = "user_me"; 
+
+// Local chat state
+let chatRooms = JSON.parse(localStorage.getItem('chatRooms')) || [];
+let currentActiveChatId = null;
+
+let socket;
+try {
+  // If socket.io is loaded
+  if (typeof io !== 'undefined') {
+    socket = io('http://localhost:5000');
+    
+    socket.on('connect', () => {
+      console.log('已成功連線至 Socket.io 伺服器');
+      // Join all existing rooms
+      chatRooms.forEach(room => {
+        socket.emit('join_room', { chatRoomId: room.id, userId: CURRENT_USER_ID });
+      });
+    });
+
+    socket.on('receive_message', (msg) => {
+      console.log('收到新訊息', msg);
+      // Find room
+      const room = chatRooms.find(r => r.id === msg.chatRoomId);
+      if (room) {
+        room.messages.push({
+          id: 'msg-' + Date.now(),
+          sender: msg.sender,
+          content: msg.content,
+          time: new Date().toISOString()
+        });
+        room.lastUpdated = new Date().toISOString();
+        saveChatState();
+        
+        // If we are currently viewing this room, render the message
+        if (currentActiveChatId === room.id) {
+          renderChatMessages(room);
+        } else {
+          // Show Toast Notification
+          if (msg.sender !== CURRENT_USER_ID) {
+            showToast("收到新訊息", `${room.sellerName}: ${msg.content}`, "info");
+          }
+        }
+        renderChatList();
+      }
+    });
+
+    socket.on('user_typing', ({ userId, isTyping }) => {
+      const typingIndicator = document.getElementById('chat-typing-indicator');
+      if (typingIndicator && userId !== CURRENT_USER_ID) {
+        typingIndicator.style.display = isTyping ? 'inline-block' : 'none';
+      }
+    });
+  }
+} catch (err) {
+  console.warn('Socket.io 連線失敗，可能尚未啟動 Node.js 伺服器。將退回純本地端模式。', err);
+}
+
+function saveChatState() {
+  localStorage.setItem('chatRooms', JSON.stringify(chatRooms));
+}
+
+function startChat(bookId, sellerName, bookTitle) {
+  // Switch to messages tab
+  const messagesTab = document.querySelector('.nav-item[data-section="messages-dashboard"]');
+  if (messagesTab) messagesTab.click();
+
+  // Find or create room
+  const roomId = `room-${bookId}-${sellerName}`;
+  let room = chatRooms.find(r => r.id === roomId);
+  
+  if (!room) {
+    room = {
+      id: roomId,
+      bookId: bookId,
+      bookTitle: bookTitle,
+      sellerName: sellerName,
+      messages: [],
+      lastUpdated: new Date().toISOString()
+    };
+    chatRooms.push(room);
+    saveChatState();
+    
+    // Join socket room
+    if (socket && socket.connected) {
+      socket.emit('join_room', { chatRoomId: roomId, userId: CURRENT_USER_ID });
+    }
+  }
+
+  openChatRoom(roomId);
+  renderChatList();
+}
+
+function renderChatList() {
+  const container = document.getElementById('chat-list-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  if (chatRooms.length === 0) {
+    container.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">目前沒有任何通訊紀錄</div>`;
+    return;
+  }
+
+  // Sort by last updated
+  const sortedRooms = [...chatRooms].sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+
+  sortedRooms.forEach(room => {
+    const item = document.createElement('div');
+    item.className = `chat-item ${currentActiveChatId === room.id ? 'active' : ''}`;
+    
+    const lastMsg = room.messages.length > 0 ? room.messages[room.messages.length - 1].content : '尚未有對話';
+    
+    item.innerHTML = `
+      <div class="chat-item-name"><i class="fa-solid fa-user-circle"></i> ${room.sellerName}</div>
+      <div class="chat-item-book">關於：${room.bookTitle}</div>
+      <div class="chat-item-preview">${lastMsg}</div>
+    `;
+    
+    item.onclick = () => openChatRoom(room.id);
+    container.appendChild(item);
+  });
+}
+
+function openChatRoom(roomId) {
+  currentActiveChatId = roomId;
+  
+  const room = chatRooms.find(r => r.id === roomId);
+  if (!room) return;
+
+  const emptyState = document.getElementById('chat-empty-state');
+  const activeView = document.getElementById('chat-active-view');
+  
+  if (emptyState) emptyState.style.display = 'none';
+  if (activeView) activeView.style.display = 'flex';
+  
+  const nameEl = document.getElementById('chat-active-name');
+  const bookEl = document.getElementById('chat-active-book');
+  
+  if (nameEl) nameEl.innerHTML = `<i class="fa-solid fa-user-circle"></i> ${room.sellerName}`;
+  if (bookEl) bookEl.textContent = `關於：${room.bookTitle}`;
+
+  renderChatMessages(room);
+  renderChatList(); // Update active state in sidebar
+}
+
+function renderChatMessages(room) {
+  const container = document.getElementById('chat-messages-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  if (room.messages.length === 0) {
+    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-size: 0.85rem;">開始與 ${room.sellerName} 的對話吧！</div>`;
+  } else {
+    room.messages.forEach(msg => {
+      const isMine = msg.sender === CURRENT_USER_ID;
+      const wrap = document.createElement('div');
+      wrap.className = `message-wrapper ${isMine ? 'mine' : 'theirs'}`;
+      wrap.innerHTML = `
+        <div class="message-bubble">${escapeHtml(msg.content)}</div>
+        <div class="message-time">${timeAgo(msg.time)}</div>
+      `;
+      container.appendChild(wrap);
+    });
+  }
+  
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+// Bind chat form submit
+document.addEventListener('DOMContentLoaded', () => {
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  
+  if (chatForm && chatInput) {
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const content = chatInput.value.trim();
+      if (!content || !currentActiveChatId) return;
+      
+      const room = chatRooms.find(r => r.id === currentActiveChatId);
+      if (!room) return;
+      
+      // Emit via Socket.io
+      if (socket && socket.connected) {
+        socket.emit('send_message', {
+          chatRoomId: room.id,
+          sender: CURRENT_USER_ID,
+          receiver: room.sellerName, // Mock receiver ID
+          book: room.bookId,
+          content: content
+        });
+      } else {
+        // Fallback local mock simulation
+        const newMsg = {
+          id: 'msg-' + Date.now(),
+          sender: CURRENT_USER_ID,
+          content: content,
+          time: new Date().toISOString()
+        };
+        room.messages.push(newMsg);
+        room.lastUpdated = new Date().toISOString();
+        saveChatState();
+        renderChatMessages(room);
+        renderChatList();
+        
+        // Mock auto-reply
+        setTimeout(() => {
+          room.messages.push({
+            id: 'msg-' + Date.now(),
+            sender: room.sellerName,
+            content: `【自動回覆】我目前不在線上，晚點回覆您關於「${room.bookTitle}」的問題喔！`,
+            time: new Date().toISOString()
+          });
+          room.lastUpdated = new Date().toISOString();
+          saveChatState();
+          if (currentActiveChatId === room.id) renderChatMessages(room);
+          renderChatList();
+          showToast("收到新訊息", `${room.sellerName}: 【自動回覆】...`, "info");
+        }, 1500);
+      }
+      
+      chatInput.value = '';
+    });
+    
+    // Typing indicator emit
+    let typingTimer;
+    chatInput.addEventListener('input', () => {
+      if (socket && socket.connected && currentActiveChatId) {
+        socket.emit('typing', { chatRoomId: currentActiveChatId, userId: CURRENT_USER_ID, isTyping: true });
+        
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+          socket.emit('typing', { chatRoomId: currentActiveChatId, userId: CURRENT_USER_ID, isTyping: false });
+        }, 1000);
+      }
+    });
+  }
+});
+
+window.startChat = startChat;
+window.openChatRoom = openChatRoom;
 
