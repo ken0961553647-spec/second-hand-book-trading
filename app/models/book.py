@@ -15,7 +15,9 @@ def get_db_connection():
     Returns:
         sqlite3.Connection: 資料庫連線物件，row_factory 設為 sqlite3.Row
     """
-    db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'instance', 'database.db')
+    # app/models/book.py -> app/models -> app -> project root
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    db_path = os.path.join(base_dir, 'instance', 'database.db')
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
