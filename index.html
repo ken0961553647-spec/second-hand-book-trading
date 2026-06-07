@@ -25,6 +25,12 @@
       </div>
       
       <div class="nav-actions">
+        <!-- Login / User Auth Section -->
+        <div id="auth-section" style="margin-right: 15px; display: flex; align-items: center; gap: 10px;">
+          <a href="accountlogin.html" class="btn btn-primary" id="login-btn-nav" style="text-decoration: none; font-size: 0.9rem; padding: 0.4rem 1rem;">會員登入</a>
+          <button id="logout-btn-nav" class="btn btn-secondary" style="display: none; font-size: 0.9rem; padding: 0.4rem 1rem;">登出</button>
+        </div>
+
         <!-- Theme Toggle -->
         <button id="theme-btn" class="theme-btn" title="切換深淺主題">
           <i class="fa-regular fa-sun"></i>
@@ -58,9 +64,9 @@
       <aside class="sidebar">
         <!-- User Profile Card -->
         <div class="profile-card">
-          <div class="profile-avatar">U</div>
+          <div class="profile-avatar" id="sidebar-profile-avatar">U</div>
           <div>
-            <div class="profile-name">讀書人小明</div>
+            <div class="profile-name" id="sidebar-profile-name">訪客 (請先登入)</div>
             <div class="profile-role">二手買家 / 賣家</div>
           </div>
         </div>
@@ -634,6 +640,32 @@
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
+
+  <!-- Auth Integration script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = localStorage.getItem('currentUser');
+      const loginBtn = document.getElementById('login-btn-nav');
+      const logoutBtn = document.getElementById('logout-btn-nav');
+      const profileName = document.getElementById('sidebar-profile-name');
+      const profileAvatar = document.getElementById('sidebar-profile-avatar');
+
+      if (currentUser) {
+        // User is logged in
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        profileName.textContent = currentUser;
+        profileAvatar.textContent = currentUser.charAt(0).toUpperCase();
+      }
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('currentUser');
+          window.location.reload();
+        });
+      }
+    });
+  </script>
 
   <!-- App Main Logic script -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
